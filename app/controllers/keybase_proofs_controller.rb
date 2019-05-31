@@ -1,7 +1,8 @@
 class KeybaseProofsController < ApplicationController
-  before_action :require_logged_in_user
+  before_action :require_logged_in_user, only: [:new, :create]
   before_action :check_new_params, only: :new
   before_action :check_user_matches, only: :new
+  before_action :force_to_json, only: [:kbconfig]
 
   def new
     @kb_username = params[:kb_username]
@@ -24,7 +25,29 @@ class KeybaseProofsController < ApplicationController
     end
   end
 
+  def kbconfig
+    return render json: {} unless Keybase.enabled?
+    @domain = Keybase.DOMAIN
+    @name = Rails.application.name
+    @brand_color = "#AC130D"
+    @description = "Computing-focused community centered around link aggregation and discussion"
+    @contacts = ["admin@#{Keybase.DOMAIN}"]
+    # rubocop:disable Style/FormatStringToken
+    @prefill_url = "#{new_keybase_proof_url}?kb_username=%{kb_username}&" \
+      "kb_signature=%{sig_hash}&kb_ua=%{kb_ua}&username=%{username}"
+    @profile_url = "#{u_url}/%{username}"
+    @check_url = "#{u_url}/%{username}.json"
+    # rubocop:enable Style/FormatStringToken
+    @logo_black = "https://lobste.rs/small-black-logo.svg"
+    @logo_full = "https://lobste.rs/full-color.logo.svg"
+    @user_re = User.username_regex_s[1...-1]
+  end
+
 private
+
+  def force_to_json
+    request.format = :json
+  end
 
   def check_user_matches
     unless case_insensitive_match?(@user.username, params[:username])
