@@ -27,10 +27,15 @@ class KeybaseProofsController < ApplicationController
 private
 
   def check_user_matches
-    unless @user.username.casecmp(params[:username]).zero?
+    unless case_insensitive_match?(@user.username, params[:username])
       flash[:error] = "not logged in as the correct user"
       return redirect_to settings_path
     end
+  end
+
+  def case_insensitive_match?(first_string, second_string)
+    # can replace this with first_string.casecmp?(second_string) when ruby >= 2.4.6
+    first_string.casecmp(second_string).zero?
   end
 
   def post_params
